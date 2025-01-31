@@ -38,6 +38,8 @@ multipleSimulationsUI <- function(id) {
       sidebarLayout(
         sidebarPanel(
           id = ns("sidebarPanel"),
+          
+          # Step 1: Upload network
           tags$div(class = "panel-heading", "Step 1: Upload network"),
           tags$div(
             class = "panel-body",
@@ -48,35 +50,74 @@ multipleSimulationsUI <- function(id) {
                         selected = "None"),
             actionButton(ns("convertSBGN"), "Upload Network", class = "btn-primary")
           ),
+          
           hr(),
-          tags$div(
-            class = "panel panel-success",
-            tags$div(class = "panel-heading", "Step 2: Encode network into mathematical model"),
-            tags$div(
-              class = "panel-body",
-              textInput(
-                ns("outputFolder"),
-                "Folder for model:",
-                "C:/Users/uqcmitsa/OneDrive - The University of Queensland/Desktop/PhD/PSoup_Shiny/Shoot_Branching_model/data/CBmodel"
-              ),
-              actionButton(ns("buildModel"), "Build Model", class = "btn-success")
-            )
+          
+          # Step 2: Encode network into a mathematical model
+          tags$div(class = "panel panel-success",
+                   tags$div(class = "panel-heading", "Step 2: Encode network into mathematical model"),
+                   tags$div(class = "panel-body",
+                            textInput(ns("outputFolder"), "Folder for model:",
+                                      "C:/Users/uqcmitsa/OneDrive - The University of Queensland/Desktop/PhD/PSoup_Shiny/Shoot_Branching_model/data/CBmodel"),
+                            actionButton(ns("buildModel"), "Build Model", class = "btn-success")
+                   )
           ),
+          
           hr(),
-          tags$div(
-            class = "panel panel-success",
-            tags$div(class = "panel-heading", "Extract modifier and exogenous list"),
-            tags$div(
-              class = "panel-body",
-              textInput(
-                ns("saveCSV"),
-                "Save data as CSV:",
-                "C:/Users/uqcmitsa/OneDrive - The University of Queensland/Desktop/PhD/PSoup_Shiny/Shoot_Branching_model/data"
-              ),
-              actionButton(ns("saveFiles"), "Save modifiers and nodes", class = "btn-danger")
-            )
+          
+          # Step 3: Extract modifier and exogenous list
+          tags$div(class = "panel panel-success",
+                   tags$div(class = "panel-heading", "Extract modifier and exogenous list"),
+                   tags$div(class = "panel-body",
+                            textInput(ns("saveCSV"), "Save data as CSV:",
+                                      "C:/Users/uqcmitsa/OneDrive - The University of Queensland/Desktop/PhD/PSoup_Shiny/Shoot_Branching_model/data"),
+                            actionButton(ns("saveFiles"), "Save modifiers and nodes", class = "btn-danger")
+                   )
+          ),
+          
+          hr(),
+          
+          # Step 4: Define experimental treatments
+          tags$div(class = "panel panel-info",
+                   tags$div(class = "panel-heading", "Step 4: Define experimental treatments"),
+                   tags$div(class = "panel-body",
+                            fileInput(ns("exogenousFile"), "Upload Exogenous Definitions CSV:"),
+                            fileInput(ns("genotypeFile"), "Upload Genotype Definitions CSV:"),
+                            actionButton(ns("saveDefinitions"), "Save Definitions", class = "btn-info")
+                   )
+          ),
+          
+          hr(),
+          
+          # Step 5: Simulation settings
+          tags$div(class = "panel panel-warning",
+                   tags$div(class = "panel-heading", "Step 5: Simulation settings"),
+                   tags$div(class = "panel-body",
+                            numericInput(ns("maxStep"), "Max Steps:", 200, min = 1),
+                            numericInput(ns("delay"), "Delay:", 20, min = 0),
+                            checkboxInput(ns("exogenousSupply"), "Enable Exogenous Supply", TRUE),
+                            checkboxInput(ns("combinatorial"), "Enable Combinatorial", FALSE),
+                            checkboxInput(ns("preventDrop"), "Prevent Drop", TRUE),
+                            actionButton(ns("runSimulations"), "Run Simulations", class = "btn-warning")
+                   )
+          ),
+          
+          hr(),
+          
+          # Step 6: Results
+          tags$div(class = "panel panel-danger",
+                   tags$div(class = "panel-heading", "Step 6: Results"),
+                   tags$div(class = "panel-body",
+                            textInput(ns("saveCSVResults"), "Save Combined Data as CSV:",
+                                      "C:/Users/uqcmitsa/OneDrive - The University of Queensland/Desktop/PhD/PSoup_Shiny/Shoot_Branching_model/data/Test_simulation_data.csv"),
+                            actionButton(ns("saveResults"), "Save Results to CSV", class = "btn-danger"),
+                            actionButton(ns("showFilters"), "Show/Hide Filters", class = "btn-secondary"),
+                            actionButton(ns("applyFilters"), "Apply Filters", class = "btn-secondary")
+                   )
           )
         ),
+        
+        # Main Panel
         mainPanel(
           id = ns("mainPanel"),
           actionButton(ns("toggleSidebar"), "Toggle Sidebar", onclick = "toggleSidebar()", class = "btn-secondary mb-3"),
@@ -84,12 +125,15 @@ multipleSimulationsUI <- function(id) {
             tabPanel("Status", verbatimTextOutput(ns("status"))),
             tabPanel("Preview", plotOutput(ns("simulationPlot"), height = "400px")),
             tabPanel("Results", DTOutput(ns("resultsTable"))),
-            tabPanel("Visualizations", selectInput(ns("yAxis"), "Select Y-axis:", choices = NULL), plotOutput(ns("barGraph"), height = "600px"))
+            tabPanel("Visualizations", 
+                     selectInput(ns("yAxis"), "Select Y-axis:", choices = NULL), 
+                     plotOutput(ns("barGraph"), height = "600px"))
           )
         )
       )
     )
   )
+      
 }
 
 multipleSimulationsServer <- function(id) {
@@ -180,11 +224,61 @@ multipleSimulationsServer <- function(id) {
       }
     })
     
+    observeEvent(input$saveResults, {
+      req(reactiveVals$allSim, reactiveVals$Gene, reactiveVals$exogenous)
+      
+      # Debug: Print file path to console
+      print(paste("🟢 Save Path Entered:", input$saveCSVResults))
+      
+      # If input is NULL or empty, stop execution
+      if (is.null(input$saveCSVResults) || input$saveCSVResults == "") {
+        output$status <- renderText("❌ Error: No save path provided!")
+        print("❌ ERROR: No save path provided!")
+        return()
+      }
+      
+      # Ensure folder exists
+      folder_path <- dirname(input$saveCSVResults)
+      if (!dir.exists(folder_path)) {
+        dir.create(folder_path, recursive = TRUE)
+        print(paste("✅ Created directory:", folder_path))
+      }
+      
+      # Generate and print data before saving
+      Hormones <- finalStates(reactiveVals$allSim$screen)
+      combined_data <- data.frame(Hormones = Hormones, Gene = reactiveVals$Gene, exogenous = reactiveVals$exogenous)
+      reactiveVals$combined_data <- combined_data
+      
+      
+      # Debug: Print first few rows of data to console
+      print( "Data Preview:")
+      print(head(combined_data))
+      
+      # Try saving the CSV file and catch errors
+      tryCatch({
+        write.csv(combined_data, file = input$saveCSVResults, row.names = FALSE)
+        output$status <- renderText("Results saved successfully!")
+        print(paste("Successfully saved results to:", input$saveCSVResults))
+      }, error = function(e) {
+        output$status <- renderText(paste("Error saving file:", e$message))
+        print(paste("ERROR: Could not save results to", input$saveCSVResults, "Error:", e$message))
+      })
+    })
+    
+    output$resultsTable <- renderDT({
+      if (is.null(reactiveVals$combined_data)) {
+        print("ERROR: No Data Available for Results Table!")
+        return(datatable(data.frame(Message = "No data available"), options = list(pageLength = 10)))
+      }
+      print("Rendering Results Table...")
+      datatable(reactiveVals$combined_data, options = list(pageLength = 10))
+    })
+    
+    
     
     # Run simulations
     observeEvent(input$runSimulations, {
       req(reactiveVals$folder)
-      output$status <- renderText("Simulations are loading...")
       reactiveVals$allSim <- setupSims(
         reactiveVals$folder,
         maxStep = input$maxStep,
@@ -193,7 +287,7 @@ multipleSimulationsServer <- function(id) {
         combinatorial = input$combinatorial,
         preventDrop = input$preventDrop
       )
-      output$status <- renderText("Simulations completed successfully!")
+      output$status <- renderText({ "Simulations completed successfully!" })
     })
     
     # Plot simulation results

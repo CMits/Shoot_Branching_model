@@ -1,5 +1,5 @@
 source("modules/network_module.R")
-source("modules/Multiple_Simulations.R")
+source("modules/Multiple_S.R")
 source("modules/manual_simulations.R")
 
 server <- function(input, output, session) {

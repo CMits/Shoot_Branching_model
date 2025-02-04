@@ -1,7 +1,7 @@
 source("modules/network_module.R")    # Load Network Analysis UI
 source("modules/simulations_module.R") # Load Simulations UI
 source("modules/manual_simulations.R") # Load Manual Simulations UI
-source("modules/multiple_simulations.R") # Load multiple simulations
+source("modules/multiple_S.R") # Load multiple simulations
 
 ui <- navbarPage(
   theme = my_theme,

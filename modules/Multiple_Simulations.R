@@ -133,7 +133,7 @@ multipleSimulationsUI <- function(id) {
       )
     )
   )
-      
+  
 }
 
 multipleSimulationsServer <- function(id) {
@@ -146,9 +146,7 @@ multipleSimulationsServer <- function(id) {
       Hormones = NULL,
       Gene = NULL,
       exogenous = NULL,
-      combined_data = NULL,
-      filtered_data = NULL,
-      show_filters = FALSE
+      combined_data = NULL
     )
     
     # Convert SBGN to network
@@ -224,16 +222,17 @@ multipleSimulationsServer <- function(id) {
       }
     })
     
+    # Save results of outcome
     observeEvent(input$saveResults, {
       req(reactiveVals$allSim, reactiveVals$Gene, reactiveVals$exogenous)
       
       # Debug: Print file path to console
-      print(paste("🟢 Save Path Entered:", input$saveCSVResults))
+      print(paste(" Save Path Entered:", input$saveCSVResults))
       
       # If input is NULL or empty, stop execution
       if (is.null(input$saveCSVResults) || input$saveCSVResults == "") {
-        output$status <- renderText("❌ Error: No save path provided!")
-        print("❌ ERROR: No save path provided!")
+        output$status <- renderText("Error: No save path provided!")
+        print("ERROR: No save path provided!")
         return()
       }
       
@@ -241,7 +240,7 @@ multipleSimulationsServer <- function(id) {
       folder_path <- dirname(input$saveCSVResults)
       if (!dir.exists(folder_path)) {
         dir.create(folder_path, recursive = TRUE)
-        print(paste("✅ Created directory:", folder_path))
+        print(paste("reated directory:", folder_path))
       }
       
       # Generate and print data before saving
@@ -265,15 +264,6 @@ multipleSimulationsServer <- function(id) {
       })
     })
     
-    output$resultsTable <- renderDT({
-      if (is.null(reactiveVals$combined_data)) {
-        print("ERROR: No Data Available for Results Table!")
-        return(datatable(data.frame(Message = "No data available"), options = list(pageLength = 10)))
-      }
-      print("Rendering Results Table...")
-      datatable(reactiveVals$combined_data, options = list(pageLength = 10))
-    })
-    
     
     
     # Run simulations
@@ -293,7 +283,7 @@ multipleSimulationsServer <- function(id) {
     # Plot simulation results
     output$simulationPlot <- renderPlot({
       req(reactiveVals$allSim)
-      fastPlot(reactiveVals$allSim$screen[[2]]$simulation, logTransform = TRUE)
+      fastPlot(reactiveVals$allSim$screen, logTransform = TRUE)
     })
     
     # Save results to CSV
@@ -302,7 +292,6 @@ multipleSimulationsServer <- function(id) {
       Hormones <- finalStates(reactiveVals$allSim$screen)
       combined_data <- data.frame(Hormones = Hormones, Gene = reactiveVals$Gene, exogenous = reactiveVals$exogenous)
       reactiveVals$combined_data <- combined_data
-      reactiveVals$filtered_data <- combined_data
       write.csv(combined_data, file = input$saveCSV, row.names = FALSE)
       output$status <- renderText("Results saved successfully!")
     })
@@ -335,4 +324,4 @@ multipleSimulationsServer <- function(id) {
       }
     })
   })
-}
+} 

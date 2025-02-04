@@ -5,6 +5,8 @@ library(DT)
 library(ggplot2)
 library(bslib)
 library(visNetwork)
+library(dplyr)
+
 
 # Define a custom theme
 my_theme <- bs_theme(

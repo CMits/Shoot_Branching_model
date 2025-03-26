@@ -185,6 +185,7 @@ multipleSimulationsUI <- function(id) {
 }
 
 
+
 # Server logic 
 multipleSimulationsServer <- function(id) {
   moduleServer(id, function(input, output, session) {
@@ -213,13 +214,17 @@ multipleSimulationsServer <- function(id) {
     output$status <- renderText({ "Network converted successfully!" })
   })
   
+  
+  
   # Build model
   observeEvent(input$buildModel, {
     req(reactiveVals$CBnetwork, input$outputFolder)
     reactiveVals$folder <- input$outputFolder
     buildModel(reactiveVals$CBnetwork, reactiveVals$folder, forceOverwrite = TRUE)
     output$status <- renderText({ "Model built successfully!" })
-  })
+  }) 
+  
+  
   
   observeEvent(input$saveFiles, {
     # Get the folder path from the user input
@@ -432,6 +437,7 @@ multipleSimulationsServer <- function(id) {
       )
   })
   
+  
   # Predifined model
   observeEvent(input$convertSBGN, {
     if (input$predefinedNetwork == "Benchmark Model") {
@@ -445,6 +451,7 @@ multipleSimulationsServer <- function(id) {
     reactiveVals$CBnetwork <- convertSBGNdiagram(file, networkName)
     output$status <- renderText({ "Network uploaded successfully!" })
   })
+  
   
   # Compare bins and calculate accuracy
   observeEvent(input$compareBins, {

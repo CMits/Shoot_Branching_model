@@ -1,0 +1,12 @@
+name: Shoot_Branching_Model
+title: Shoot_Branching_model
+username: mitsanis
+account: mitsanis
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14340565
+bundleId: 10003939
+url: https://mitsanis.shinyapps.io/Shoot_Branching_Model/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

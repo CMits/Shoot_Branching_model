@@ -1,6 +1,14 @@
 # Load required libraries
-library(shiny)
+# Check if PSoup is installed, if not install it from GitHub
+if (!requireNamespace("PSoup", quietly = TRUE)) {
+  remotes::install_github("NicoleZFortuna/PSoup")
+}
+library(future)
+plan(multisession)
+# Load the package after installation
 library(PSoup)
+
+library(shiny)
 library(DT)
 library(ggplot2)
 library(bslib)
